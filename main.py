@@ -107,6 +107,7 @@ def execute(events):
 
 def lambda_handler(event, context):
     lambda_call_result = execute(event)
+    print(lambda_call_result)
     return {
         'statusCode': 200,
         'body': json.dumps(lambda_call_result)
