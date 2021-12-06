@@ -31,7 +31,7 @@ def get_avg_data(avg: int):
         return "<b>20-25: Moderate.</b>%0a%0aEnjoy your usual outdoor activities.%0a" \
                "Sensitive groups should consider reducing intense outdoor activities, if you experience symptoms.", \
                AirLevel.Moderate
-    elif avg <= 30:
+    elif avg <= 50:
         return "<b>25-50: Poor.</b>%0a%0aConsider reducing intense activities outdoors, " \
                "if you experience symptoms such as sore eyes, a cough or sore throat.%0a" \
                "Sensitive groups should consider reducing physical activities, particularly outdoors, " \
