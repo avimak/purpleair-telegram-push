@@ -22,7 +22,7 @@ def is_dangerous(level: AirLevel):
 
 def get_avg_data(avg: int):
     if avg == -1:
-        return "No current data", AirLevel.NA
+        return "No current data; sensor is disconnected", AirLevel.NA
     elif avg <= 10:
         return "<b>0-10: Good.</b>%0a%0aThe air quality is good. Enjoy your usual outdoor activities.", AirLevel.Good
     elif avg <= 20:
@@ -87,8 +87,11 @@ def execute(events):
     if last_level and last_level == level:
         return f"Nothing Changed, avg: {avg}, level: {level}"
 
-    # notify when moving between is_dangerous states (e.g. no reason to notify between "poor" and "extremely poor")
-    should_notify = is_dangerous(last_level) != is_dangerous(level) if last_level else is_dangerous(level)
+    # notify when moving between is_dangerous states (e.g. no reason to notify between "poor" and "extremely poor"),
+    # unless it's N/A which shouldn't trigger at all
+    should_notify = level != AirLevel.NA and (
+        is_dangerous(last_level) != is_dangerous(level) if last_level else is_dangerous(level)
+    )
 
     # push msg to telegram channel
     push_url = f"https://api.telegram.org/bot{bot_api_key}/sendMessage" \
