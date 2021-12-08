@@ -90,7 +90,8 @@ def execute(events):
     # notify when moving between is_dangerous states (e.g. no reason to notify between "poor" and "extremely poor"),
     # unless it's N/A which shouldn't trigger at all
     should_notify = level != AirLevel.NA and (
-        is_dangerous(last_level) != is_dangerous(level) if last_level else is_dangerous(level)
+        (last_level != AirLevel.NA and is_dangerous(last_level) != is_dangerous(level)) if last_level
+        else is_dangerous(level)
     )
 
     # push msg to telegram channel
