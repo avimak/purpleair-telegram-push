@@ -5,6 +5,8 @@ from enum import Enum
 import boto3 as boto3
 import requests
 
+from texts import Texts
+
 
 class AirLevel(Enum):
     NA = "No Data"
@@ -20,30 +22,21 @@ def is_dangerous(level: AirLevel):
     return level not in [AirLevel.NA, AirLevel.Good, AirLevel.Fair]
 
 
-def get_avg_data(avg: int):
+def get_avg_data(avg: int, text: Texts):
     if avg == -1:
-        return "No current data; sensor is disconnected", AirLevel.NA
+        return text.t(AirLevel.NA.value), AirLevel.NA
     elif avg <= 10:
-        return "<b>0-10: Good.</b>%0a%0aThe air quality is good. Enjoy your usual outdoor activities.", AirLevel.Good
+        return text.t(AirLevel.Good.value), AirLevel.Good
     elif avg <= 20:
-        return "<b>10-20: Fair.</b>%0a%0aEnjoy your usual outdoor activities.", AirLevel.Fair
+        return text.t(AirLevel.Fair.value), AirLevel.Fair
     elif avg <= 25:
-        return "<b>20-25: Moderate.</b>%0a%0aEnjoy your usual outdoor activities.%0a" \
-               "Sensitive groups should consider reducing intense outdoor activities, if you experience symptoms.", \
-               AirLevel.Moderate
+        return text.t(AirLevel.Moderate.value), AirLevel.Moderate
     elif avg <= 50:
-        return "<b>25-50: Poor.</b>%0a%0aConsider reducing intense activities outdoors, " \
-               "if you experience symptoms such as sore eyes, a cough or sore throat.%0a" \
-               "Sensitive groups should consider reducing physical activities, particularly outdoors, " \
-               "especially if you experience symptoms.", AirLevel.Poor
+        return text.t(AirLevel.Poor.value), AirLevel.Poor
     elif avg <= 75:
-        return "<b>50-75: Very Poor.</b>%0a%0aConsider reducing intense activities outdoors, " \
-               "if you experience symptoms such as sore eyes, a cough or sore throat.%0a" \
-               "Sensitive groups should reduce physical activities, particularly outdoors, " \
-               "especially if you experience symptoms.", AirLevel.VeryPoor
+        return text.t(AirLevel.VeryPoor.value), AirLevel.VeryPoor
     elif avg > 75:
-        return "<b>over 75! Extremely Poor.</b>%0a%0aReduce physical activities outdoors.%0a" \
-               "Sensitive groups should avoid physical activities outdoors.", AirLevel.ExtremelyPoor
+        return text.t(AirLevel.ExtremelyPoor.value), AirLevel.ExtremelyPoor
     else:
         raise RuntimeError(f"Error - unknown value: {avg}")
 
@@ -58,6 +51,8 @@ def execute(events):
     channel_name = events.get("TELEGRAM_CHANNEL_NAME") or os.environ["TELEGRAM_CHANNEL_NAME"]
     assert channel_name, "Missing TELEGRAM_CHANNEL_NAME env"
 
+    texts = Texts(locale=(events.get("LOCALE") or os.getenv("LOCALE") or "en").split("_")[0])
+
     # get sensor data
     sensor_data = requests.get(f"https://www.purpleair.com/json?show={sid}")
     sensor_data.raise_for_status()
@@ -70,14 +65,14 @@ def execute(events):
     avg = int(round(total / len(results))) if total >= 0 else -1
 
     # retrieve msg & level for current avg
-    (msg, level) = get_avg_data(avg)
+    (msg, level) = get_avg_data(avg, texts)
 
     # retrieve last exec level
     ssm_client = boto3.client('ssm')
     param_name = "purpleair_push_last_avg"
     try:
         stored_param = ssm_client.get_parameter(Name=param_name)
-        (_, last_level) = get_avg_data(int(stored_param["Parameter"]["Value"]))
+        (_, last_level) = get_avg_data(int(stored_param["Parameter"]["Value"]), texts)
     except Exception as e:
         if e.__class__.__name__ == "ParameterNotFound":
             last_level = None
