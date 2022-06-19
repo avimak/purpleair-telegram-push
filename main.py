@@ -45,6 +45,9 @@ def execute(events):
     sid = events.get("SENSOR_ID") or os.environ["SENSOR_ID"]
     assert sid, "Missing SENSOR_ID env"
 
+    purpleair_api_key = events.get("API_KEY_READ") or os.environ["API_KEY_READ"]
+    assert purpleair_api_key, "Missing API_KEY_READ env"
+
     bot_api_key = events.get("TELEGRAM_BOT_API_KEY") or os.environ["TELEGRAM_BOT_API_KEY"]
     assert bot_api_key, "Missing TELEGRAM_BOT_API_KEY env"
 
@@ -54,15 +57,12 @@ def execute(events):
     texts = Texts(locale=(events.get("LOCALE") or os.getenv("LOCALE") or "en").split("_")[0])
 
     # get sensor data
-    sensor_data = requests.get(f"https://www.purpleair.com/json?show={sid}")
+    sensor_data = requests.get(f"https://api.purpleair.com/v1/sensors/{sid}?api_key={purpleair_api_key}")
     sensor_data.raise_for_status()
 
     # find PM2.5 avg over all returned channels
-    results = sensor_data.json()["results"]
-    total = -1
-    for result in results:
-        total += float(result["PM2_5Value"])
-    avg = int(round(total / len(results))) if total >= 0 else -1
+    avg_raw = sensor_data.json()["sensor"]["stats"]["pm2.5_10minute"]
+    avg = round(avg_raw)
 
     # retrieve msg & level for current avg
     (msg, level) = get_avg_data(avg, texts)

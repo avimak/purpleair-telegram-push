@@ -3,10 +3,11 @@ Push PurpleAir sensor updates to a telegram channel
 
 ___
 ### Expected environment variables:
-| Key   |      Description      | 
-|----------|:-------------:|
-| SENSOR_ID |  PurpleAir sensor ID |
-| TELEGRAM_BOT_API_KEY |    Telegram BOT API Key    |
+| Key   |              Description               | 
+|----------|:--------------------------------------:|
+| SENSOR_ID |          PurpleAir sensor ID           |
+| API_KEY_READ |       PurpleAir API READ key        |
+| TELEGRAM_BOT_API_KEY |          Telegram BOT API Key          |
 | TELEGRAM_CHANNEL_NAME | Channel name (in @channel_name format) |
 
 ### AWS credentials:
